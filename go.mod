@@ -1,6 +1,6 @@
 module github.com/datmedevil17/restaurant-management
 
-go 1.25.4
+go 1.25.0
 
 require (
 	github.com/go-playground/validator/v10 v10.29.0
