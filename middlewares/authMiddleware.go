@@ -12,14 +12,14 @@ func Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		clientToken := r.Header.Get("token")
 		if clientToken == "" {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError) //500
 			json.NewEncoder(w).Encode(map[string]string{"message": "No Authorization header provided"})
 			return
 		}
 
 		claims, msg := helpers.ValidateToken(clientToken)
 		if msg != "" {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError) //500
 			json.NewEncoder(w).Encode(map[string]string{"message": msg})
 			return
 		}

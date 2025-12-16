@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -20,8 +19,9 @@ var foodCollection *mongo.Collection = database.OpenCollection(database.Client, 
 func getFood(foodId string) (*model.Food, error) {
 	fId, err := primitive.ObjectIDFromHex(foodId)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
+
 	var food model.Food
 	filter := bson.M{"_id": fId}
 	err = foodCollection.FindOne(context.TODO(), filter).Decode(&food)
@@ -104,8 +104,9 @@ func updateFood(foodId string, food model.Food) (*model.Food, error) {
 func deleteFood(foodId string) error {
 	fId, err := primitive.ObjectIDFromHex(foodId)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	filter := bson.M{"_id": fId}
 	_, err = foodCollection.DeleteOne(context.TODO(), filter)
 	if err != nil {

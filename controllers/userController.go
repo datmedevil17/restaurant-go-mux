@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -62,7 +61,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 
 	var allUsers []bson.M
 	if err = result.All(ctx, &allUsers); err != nil {
-		log.Fatal(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"message": err.Error()})
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -110,21 +111,24 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
 	defer cancel()
 	if err != nil {
-		log.Panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"message": "error occured while checking for the email"})
 		return
 	}
 
-	password := HashPassword(*user.Password)
+	password, err := HashPassword(*user.Password)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"message": "error hashing password"})
+		return
+	}
 	user.Password = &password
 
 	count, err = userCollection.CountDocuments(ctx, bson.M{"phone": user.Phone})
 	defer cancel()
 	if err != nil {
-		log.Panic(err)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"message": "error occured while checking checking for the phone number"})
+		json.NewEncoder(w).Encode(map[string]string{"message": "error occured while checking for the phone number"})
 		return
 	}
 
@@ -185,7 +189,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, refreshToken, _ := helpers.GenerateAllTokens(*foundUser.Email, *foundUser.First_name, *foundUser.Last_name, foundUser.User_id)
-	helpers.UpdateAllTokens(token, refreshToken, foundUser.User_id)
+	err = helpers.UpdateAllTokens(token, refreshToken, foundUser.User_id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"message": err.Error()})
+		return
+	}
 
 	err = userCollection.FindOne(ctx, bson.M{"user_id": foundUser.User_id}).Decode(&foundUser)
 
@@ -200,13 +209,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func HashPassword(password string) string {
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	if err != nil {
-		log.Panic(err)
+		return "", err
 	}
 
-	return string(bytes)
+	return string(bytes), nil
 }
 
 func VerifyPassword(userPassword string, providePassword string) (bool, string) {

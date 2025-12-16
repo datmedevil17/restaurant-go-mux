@@ -6,11 +6,11 @@ import (
 )
 
 func UserRoutes(r *mux.Router) {
-	r.HandleFunc("/users", controller.GetUsers).Methods("GET")
-	r.HandleFunc("/users/:user_id", controller.GetUser).Methods("GET")
 	r.HandleFunc("/users/signup", controller.SignUp).Methods("POST")
 	r.HandleFunc("/users/login", controller.Login).Methods("POST")
-	// r.HandleFunc("/users/:user_id", controller.UpdateUser).Methods("PUT")
-	// r.HandleFunc("/users/:user_id", controller.DeleteUser).Methods("DELETE")
+}
 
+func UserProtectedRoutes(r *mux.Router) {
+	r.HandleFunc("/users", controller.GetUsers).Methods("GET")
+	r.HandleFunc("/users/{user_id}", controller.GetUser).Methods("GET")
 }
